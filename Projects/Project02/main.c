@@ -699,10 +699,8 @@
 "    {"\
 "        foreach ($this->rules as $rule)"\
 "        {"\
-"            echo join(\"\", $rule[\"spell\"]) . PHP_EOL;"\
 "            foreach($this->eval_all(join(\"\", $rule[\"spell\"])) as $item)"\
 "            {"\
-"                echo $item . PHP_EOL;"\
 "                $index = substr_count($item, \"1\");"\
 "                array_push($this->pi_groups[$index], $item);"\
 "            }"\
@@ -793,7 +791,6 @@
 "        if (! $this->read_end) return;"\
 "        if ($print_src) $this->print_table();"\
 "        $this->init();"\
-"        var_dump($this->pi_groups);"\
 "        $this->simple();"\
 "        $this->mini();"\
 "    }"\
@@ -816,7 +813,7 @@
 "                $this->pi_table[$item] = array();"\
 "                foreach ($this->eval_all($item) as $m_num)"\
 "                {"\
-"                    $m_num = bindec((int)$m_num);"\
+"                    $m_num = bindec(\"\" . $m_num);"\
 "                    if (!isset($this->m_table[$m_num]))"\
 "                    {"\
 "                        $this->m_table[$m_num] = array();"\
@@ -844,7 +841,11 @@
 "                }"\
 "            }"\
 "        }"\
-"        var_dump(array_unique($validates));"\
+"        $validates = array_unique($validates);"\
+"        foreach($validates as $validate)"\
+"        {"\
+"            var_dump($this->pi_table[$validate]);"\
+"        }"\
 "    }"\
 "    protected function get_single()"\
 "    {"\

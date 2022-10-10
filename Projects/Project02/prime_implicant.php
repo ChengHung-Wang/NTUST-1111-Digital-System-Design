@@ -29,10 +29,8 @@ class PrimeImplicant extends OBDD
     {
         foreach ($this->rules as $rule)
         {
-            echo join("", $rule["spell"]) . PHP_EOL;
             foreach($this->eval_all(join("", $rule["spell"])) as $item)
             {
-                echo $item . PHP_EOL;
                 $index = substr_count($item, "1");
                 array_push($this->pi_groups[$index], $item);
             }
@@ -146,8 +144,6 @@ class EssentialPrimeImplicant extends PrimeImplicant
         if (! $this->read_end) return;
         if ($print_src) $this->print_table();
         $this->init();
-        var_dump($this->pi_groups);
-
         $this->simple();
         $this->mini();
     }
@@ -175,7 +171,7 @@ class EssentialPrimeImplicant extends PrimeImplicant
                 $this->pi_table[$item] = array();
                 foreach ($this->eval_all($item) as $m_num)
                 {
-                    $m_num = bindec((int)$m_num);
+                    $m_num = bindec("" . $m_num);
                     if (!isset($this->m_table[$m_num]))
                     {
                         $this->m_table[$m_num] = array();
@@ -203,7 +199,11 @@ class EssentialPrimeImplicant extends PrimeImplicant
                 }
             }
         }
-        var_dump(array_unique($validates));
+        $validates = array_unique($validates);
+        foreach($validates as $validate)
+        {
+            var_dump($this->pi_table[$validate]);
+        }
     }
 
     protected function get_single()
