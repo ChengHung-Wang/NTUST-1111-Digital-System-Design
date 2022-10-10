@@ -1,7 +1,8 @@
 <?php
-require_once("./robdd.php");
+require_once("./prime_implicant.php");
 require_once("./parser.php");
-$service = new ROBDD();
+
+$service = new EssentialPrimeImplicant();
 
 if (isset($argv[1]) && isset($argv[2])) {
     $pla_file = $argv[1];
@@ -14,13 +15,13 @@ if (isset($argv[1]) && isset($argv[2])) {
     if (! $file) {
         die("ERR: PERMISSION_DENY in .dot file(check read/write permission)");
     }
-
     $parser = new Parser($service, $pla_file);
-    $service->render(true);
-    $service->print_table();
+    $service->render();
     fwrite($file, $service->encode_dot());
     fclose($file);
-    echo $service->get_equation_str();
+    echo $service->get_equation_str() . PHP_EOL;
+    echo "Don't care: ";
+    echo $service->get_dont_care_str() . PHP_EOL;
 }
 else
 {

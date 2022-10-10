@@ -76,7 +76,7 @@ class ROBDD extends OBDD {
             }
             $result[$layer_name] = array_filter($result[$layer_name], function($item)
             {
-               return count($item) > 1;
+                return count($item) > 1;
             });
         }
         return array_filter($result, function($item)

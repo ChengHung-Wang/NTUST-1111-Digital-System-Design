@@ -47,6 +47,11 @@ class OBDD {
     public $out_dot_file_path;
 
     /**
+     * @var array
+     */
+    public $dont_care;
+
+    /**
      * init
      * @return void
      */
@@ -55,6 +60,7 @@ class OBDD {
         $this->data = array();
         $this->variables = array();
         $this->rules = array();
+        $this->dont_care = array();
         $this->size = 0;
         $this->output_size = 0;
         $this->out_dot_file_path = "";
@@ -91,7 +97,7 @@ class OBDD {
             return;
         }
         $this->output_size = intval($num);
-        // TODO:
+        // TODO
     }
 
     /**
@@ -106,7 +112,7 @@ class OBDD {
     /**
      * add rule(must has set var_name)
      * @param string $spell
-     * @param string $target 0 || 1 || -
+     * @param string $target
      * @return void
      */
     public function add_rule($spell, $target)
@@ -119,36 +125,39 @@ class OBDD {
         {
             return;
         }
-        if ($this->equation != "")
-        {
-            $this->equation .= " + ";
-        }
-        // TODO: change here
+
         $spell = str_split($spell);
+        $equ_part = "";
         for ($index = 0; $index < count($this->variables); $index ++)
         {
 
             if ($spell[$index] !== "-")
             {
-                $this->equation .= $this->variables[$index] . (intval($spell[$index]) == 0 ? "'" : "");
+                $equ_part .= $this->variables[$index] . (intval($spell[$index]) == 0 ? "'" : "");
             }
         }
-        if ($target == "-") {
-            array_push($this->rules, array(
+
+        // don't care
+        if ($target == "-")
+        {
+            array_push($this->dont_care, array(
                 "spell" => $spell,
-                "target" => true
-            ));
-            array_push($this->rules, array(
-                "spell" => $spell,
-                "target" => false
-            ));
-        }else {
-            array_push($this->rules, array(
-                "spell" => $spell,
-                "target" => $target == 1
+                "equation_part" => $equ_part
             ));
         }
-        var_dump($this->rules);
+        else
+        {
+            if ($this->equation != "")
+            {
+                $this->equation .= " + ";
+            }
+            $this->equation .= $equ_part;
+        }
+
+        array_push($this->rules, array(
+            "spell" => $spell,
+            "target" => $target
+        ));
     }
 
     /**
@@ -195,56 +204,25 @@ class OBDD {
      */
     public function get_equation_str()
     {
-        // TODO: calc equation here
-        return $this->output_equation_name . " = " . $this->equation . PHP_EOL;
+        return $this->output_equation_name . " = " . $this->equation;
     }
 
     /**
-     * get don't care equation
+     * get don't care equation string
+     * @return string
      */
-    public function get_dont_care()
+    public function get_dont_care_str()
     {
-//        $logs = array();
-//        foreach ($this->variables as $variable)
-//        {
-//            $logs[$variable] = array();
-//        }
-//        foreach ($this->rules as $rule)
-//        {
-//            foreach($rule["spell"] as $index => $spell)
-//            {
-//
-//            }
-//        }
-
-    }
-
-    /**
-     * guess all
-     * @param string $equation
-     * @return array
-     */
-    public function guess($equation, $logs = array())
-    {
-        $equ = str_split($equation);
-        if (in_array("-", $equ))
+        $result = "";
+        foreach ($this->dont_care as $item)
         {
-            $cache = "";
-            foreach ($equ as $index => $item)
+            if ($result != "")
             {
-                if ($item == "-") {
-                    $end_prefix = (count($equ) - 1) <= $index ? "" :  substr($equation, $index + 1);
-                    array_push($logs, $cache . "0" . $end_prefix);
-                    array_push($logs, $cache . "1" . $end_prefix);
-                }
-                $cache .= $item;
+                $result .= " + ";
             }
-        }else {
-            if (count($logs) == 0) {
-                array_push($logs, $equation);
-            }
-            return $logs;
+            $result .= $item["equation_part"];
         }
+        return $result;
     }
 
     /**
@@ -322,8 +300,8 @@ class OBDD {
             }
         }
         $table = new CliTable;
-        $table->setTableColor('blue');
-        $table->setHeaderColor('cyan');
+        $table->setTableColor('reset');
+        $table->setHeaderColor('blue');
         $table->addField('Index', 'id', false, 'gray');
         $table->addField('Variable',  'var', false, 'yellow');
         $table->addField('Else-edge',        'catch', false, 'white');
@@ -352,8 +330,8 @@ class OBDD {
         }
         foreach ($ranks as $rank) {
             $result .= $tab . "{rank=same " . join(" ", array_map(function($item) {
-                return $item["id"];
-            }, $rank)) . "}" . PHP_EOL;
+                    return $item["id"];
+                }, $rank)) . "}" . PHP_EOL;
         }
         $result .= PHP_EOL;
 
@@ -396,6 +374,8 @@ class OBDD {
     /**
      * get node result, for lasted layer
      * @param int $id nodeIndex
+     * @param array $find_then
+     * @param array $find_catch
      * @return array
      */
     protected function get_node_result($id, $find_then = array(), $find_catch = array())

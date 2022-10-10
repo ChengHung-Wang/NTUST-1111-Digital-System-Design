@@ -9,7 +9,7 @@ class Parser
     /**
      * @var array input
      */
-    private $input;
+    protected $input;
 
     public function __construct(&$obdd_service, $file_path = "")
     {
@@ -36,7 +36,7 @@ class Parser
         $this->analyze();
     }
 
-    private function analyze()
+    protected function analyze()
     {
         $rule_limit = 0;
         foreach($this->input as $item)
