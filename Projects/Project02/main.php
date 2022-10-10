@@ -1,5 +1,5 @@
 <?php
-require_once("./prime_implicant.php");
+require_once("./essential_prime_implicant.php");
 require_once("./parser.php");
 
 $service = new EssentialPrimeImplicant();

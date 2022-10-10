@@ -138,7 +138,7 @@ class OBDD {
         }
 
         // don't care
-        if ($target == "-")
+        if ($target === "-")
         {
             array_push($this->dont_care, array(
                 "spell" => $spell,

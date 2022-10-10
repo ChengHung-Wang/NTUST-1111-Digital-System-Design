@@ -364,7 +364,7 @@
 "                $equ_part .= $this->variables[$index] . (intval($spell[$index]) == 0 ? \"'\" : \"\");"\
 "            }"\
 "        }"\
-"                if ($target == \"-\")"\
+"                if ($target === \"-\")"\
 "        {"\
 "            array_push($this->dont_care, array("\
 "                \"spell\" => $spell,"\
@@ -681,7 +681,6 @@
 "    protected $pi_groups;"\
 "    public function render($print_src = false)"\
 "    {"\
-"        parent::render($print_src);"\
 "        if (! $this->read_end) return;"\
 "        if ($print_src) $this->print_table();"\
 "        $this->init();"\
@@ -787,10 +786,10 @@
 "    protected $pi_table;"\
 "    public function render($print_src = false)"\
 "    {"\
-"        parent::render($print_src);"\
 "        if (! $this->read_end) return;"\
 "        if ($print_src) $this->print_table();"\
 "        $this->init();"\
+"        var_dump($this->pi_groups);"\
 "        $this->simple();"\
 "        $this->mini();"\
 "    }"\
@@ -836,15 +835,17 @@
 "                {"\
 "                    if ($item !== $single_item[\"pi_table_key\"])"\
 "                    {"\
-"                        array_push($validates, $item);"\
+"                        if (!isset($validates[$item]))"\
+"                        {"\
+"                            $validates[$item] = array();"\
+"                        }"\
+"                        array_push($validates[$item], $effect);"\
 "                    }"\
 "                }"\
 "            }"\
 "        }"\
-"        $validates = array_unique($validates);"\
-"        foreach($validates as $validate)"\
+"        foreach($validates as $p_key => $m_key)"\
 "        {"\
-"            var_dump($this->pi_table[$validate]);"\
 "        }"\
 "    }"\
 "    protected function get_single()"\
