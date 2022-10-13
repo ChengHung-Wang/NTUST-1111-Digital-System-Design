@@ -28,7 +28,7 @@ class Parser
     {
         $input = rtrim(fgets(STDIN));
         array_push($this->input, $input);
-        while($input != ".e")
+        while($input !== ".e")
         {
             $input = rtrim(fgets(STDIN));
             array_push($this->input, $input);

@@ -686,8 +686,8 @@
 "        if ($print_src) $this->print_table();"\
 "        $this->init();"\
 "        $this->analyze();"\
-"        var_dump($this->pi_groups);"\
 "    }"\
+"    "\
 "    protected function analyze()"\
 "    {"\
 "        $change = 0;"\
@@ -704,16 +704,16 @@
 "                \"combined\" => false"\
 "            );"\
 "        }, array_values(array_unique($this->pi_analyze_logs)));"\
-"        var_dump($this->pi_analyze_logs);"\
 "        while (1)"\
 "        {"\
 "            $n = count($this->pi_analyze_logs);"\
-"            echo \"----\n\";"\
+"            $pre_insert = array();"\
 "            for ($i = 0; $i < $n; $i++) {"\
 "                for ($j = $i + 1; $j < $n; $j++) {"\
 "                    $first = $this->pi_analyze_logs[$i][\"equation\"];"\
 "                    $second = $this->pi_analyze_logs[$j][\"equation\"];"\
 "                    $diff = $this->get_diff($first, $second);"\
+"                    echo $first . \" & \" . $second . \" \" . (substr_count($second, \"1\") - substr_count($first, \"1\")) . PHP_EOL;"\
 "                    if ("\
 "                        count($diff) === 1 &&"\
 "                        (substr_count($second, \"1\") - substr_count($first, \"1\") === 1) &&"\
@@ -727,17 +727,23 @@
 "                        $new_equation = str_split($first);"\
 "                        $new_equation[$diff[0]] = \"-\";"\
 "                        $new_equation = join(\"\", $new_equation);"\
-"                        echo $first . \" -> \" . $second . \" \" . $new_equation . PHP_EOL;"\
-"                        array_push($this->pi_analyze_logs, array("\
-"                            \"equation\" => $new_equation,"\
-"                            \"combined\" => false"\
-"                        ));"\
+"                        echo $first . \" & \" . $second . \" => \" . $new_equation . PHP_EOL;"\
+"                        array_push($pre_insert, $new_equation);"\
 "                    }"\
 "                }"\
 "            }"\
 "            $this->pi_analyze_logs = array_values(array_filter($this->pi_analyze_logs, function($item) {"\
 "                return !$item[\"combined\"];"\
 "            }));"\
+"            var_dump($pre_insert);"\
+"            foreach(array_unique($pre_insert) as $insert)"\
+"            {"\
+"                array_push($this->pi_analyze_logs, array("\
+"                    \"equation\" => $insert,"\
+"                    \"combined\" => false"\
+"                ));"\
+"            }"\
+"            var_dump($this->pi_analyze_logs);"\
 "            $this->pi_analyze_logs = array_map(function($item) {"\
 "                return array("\
 "                    \"equation\" => $item,"\
@@ -752,26 +758,9 @@
 "                break;"\
 "            }"\
 "            $change = 0;"\
+"            var_dump($this->pi_analyze_logs);"\
 "        }"\
-"    }"\
-"    protected function new_combine(&$obj)"\
-"    {"\
-"        $pre_insert = array();"\
-"        $has_change = false;"\
-"        foreach ($this->pi_analyze_logs as &$log)"\
-"        {"\
-"            $diff = $this->get_diff($obj[\"equation\"], $log[\"equation\"]);"\
-"            if (count($diff) === 1 && substr_count($obj[\"equation\"], \"-\") < count($this->variables) - 1)"\
-"            {"\
-"                echo $obj[\"equation\"] . \" & \" . $log[\"equation\"] . \" => \";"\
-"                $new_equation = str_split($obj[\"equation\"]);"\
-"                $new_equation[$diff[0]] = \"-\";"\
-"                echo join(\"\", $new_equation) . PHP_EOL;"\
-"                array_push($pre_insert, join(\"\", $new_equation));"\
-"                $has_change = true;"\
-"            }"\
-"        }"\
-"        return $pre_insert;"\
+"        var_dump($this->pi_groups);"\
 "    }"\
 "    "\
 "    protected function get_diff($first, $second)"\
@@ -802,18 +791,6 @@
 "        return $result;"\
 "    }"\
 "    "\
-"    protected function all_combined()"\
-"    {"\
-"        foreach ($this->pi_analyze_logs as $log)"\
-"        {"\
-"            if (! $log[\"combined\"])"\
-"            {"\
-"                return false;"\
-"            }"\
-"        }"\
-"        return true;"\
-"    }"\
-"    "\
 "    protected function init()"\
 "    {"\
 "        $this->pi_groups = array();"\
@@ -831,6 +808,7 @@
 "            }"\
 "        }"\
 "    }"\
+"    "\
 "    protected function group($data)"\
 "    {"\
 "        foreach ($data as $rule)"\
@@ -841,101 +819,14 @@
 "        foreach ($this->pi_groups as &$pi_group)"\
 "        {"\
 "            $pi_group = array_unique($pi_group);"\
-"        }"\
-"    }"\
-"    "\
-"    protected function simple()"\
-"    {"\
-"        $valid_single = array();"\
-"        for ($i = 0; $i < (count($this->variables) - 2); $i ++)"\
-"        {"\
-"            $new_pi_groups = array();"\
-"            for ($index = 0; ($index < count($this->pi_groups) - 1); $index ++)"\
+"            foreach ($pi_group as $item)"\
 "            {"\
-"                if (isset($this->pi_groups[$index]) && isset($this->pi_groups[$index + 1]))"\
-"                {"\
-"                    if (count($this->pi_groups[$index + 1]) === 0)"\
-"                    {"\
-"                        foreach ($this->pi_groups[$index] as $content)"\
-"                        {"\
-"                            echo \"push group $index $content\" . PHP_EOL;"\
-"                            array_push($valid_single, $content);"\
-"                        }"\
-"                        $new_pi_groups[$index] = $this->pi_groups[$index];"\
-"                    }else"\
-"                    {"\
-"                        $new_pi_groups[$index] = $this->combine($index);"\
-"                    }"\
-"                }"\
-"            }"\
-"            $lasted_group = $this->pi_groups[count($this->pi_groups) - 1];"\
-"            foreach($lasted_group as $content)"\
-"            {"\
-"                array_push($valid_single, $content);"\
-"            }"\
-"            $this->pi_groups = $new_pi_groups;"\
-"            echo $i . PHP_EOL;"\
-"            var_dump($this->pi_groups);"\
-"        }"\
-"        echo \"simple end\" . PHP_EOL;"\
-"        $validates = array();"\
-"        foreach ($valid_single as $content)"\
-"        {"\
-"            if (substr_count($content, \"-\") > 0)"\
-"            {"\
-"                foreach ($this->eval_all($content) as $item)"\
-"                {"\
-"                    array_push($validates, $item);"\
-"                }"\
-"            }"\
-"            else"\
-"            {"\
-"                array_push($validates, $content);"\
+"                array_push($this->pi_analyze_logs, array("\
+"                    \"equation\" => $item,"\
+"                    \"combined\" => false,"\
+"                ));"\
 "            }"\
 "        }"\
-"        $validates = array_filter(array_values(array_unique($validates)), function($item) {"\
-"            return !$this->check_exists($item);"\
-"        });"\
-"                $new_validates = array();"\
-"        foreach ($validates as $validate)"\
-"        {"\
-"            $index = substr_count($validate, \"1\");"\
-"            if (!isset($new_validates[$index]))"\
-"            {"\
-"                $new_validates[$index] = array();"\
-"            }"\
-"            array_push($new_validates[$index], $validate);"\
-"        }"\
-"        var_dump($new_validates);"\
-"    }"\
-"    "\
-"    protected function combine($index)"\
-"    {"\
-"        $result = array();"\
-"        if (!isset($this->pi_groups[$index]) || !isset($this->pi_groups[$index + 1])) return array();"\
-"        foreach($this->pi_groups[$index] as $now)"\
-"        {"\
-"            foreach($this->pi_groups[$index + 1] as $next)"\
-"            {"\
-"                $diff = -1;"\
-"                $num = 0;"\
-"                for ($t_index = 0; $t_index < count($this->variables); $t_index ++)"\
-"                {"\
-"                    if ($now[$t_index] !== $next[$t_index])"\
-"                    {"\
-"                        $diff = $t_index;"\
-"                        $num ++;"\
-"                    }"\
-"                }"\
-"                if ($num === 1)"\
-"                {"\
-"                    $find = $now;"\
-"                    $find[$diff] = \"-\";"\
-"                    array_push($result, $find);"\
-"                }"\
-"            }"\
-"        }"\
-"        return array_unique($result);"\
 "    }"\
 "    "\
 "    protected function eval_all($str)"\
@@ -962,41 +853,6 @@
 "            $this->guess($str, $guess_arr, $temp . $str_split[$index], $index + 1);"\
 "        }"\
 "    }"\
-"    "\
-"    protected function check_exists($equation)"\
-"    {"\
-"        $equation = str_split($equation);"\
-"        foreach ($this->pi_groups as $layer1)"\
-"        {"\
-"            foreach ($layer1 as $layer2)"\
-"            {"\
-"                $has_diff = false;"\
-"                foreach (str_split($layer2) as $index => $item)"\
-"                {"\
-"                    if ($item !== \"-\" && $equation[$index] !== $item)"\
-"                    {"\
-"                        $has_diff = true;"\
-"                    }"\
-"                }"\
-"                if (! $has_diff)"\
-"                {"\
-"                    return true;"\
-"                }"\
-"            }"\
-"        }"\
-"        return false;"\
-"    }"\
-"    protected function bubble_sort(&$array){"\
-"        $num = count($array);"\
-"                for($i = 0 ; $i < $num ; $i++){"\
-"                        for($j = $num-1 ; $j > $i ; $j--){"\
-"                if(bindec($array[$j]) < bindec($array[$j-1])){"\
-"                                        list($array[$j] , $array[$j-1]) = array($array[$j-1] , $array[$j]);"\
-"                }"\
-"            }"\
-"        }"\
-"        return $array;"\
-"    }"\
 "}"\
 "class EssentialPrimeImplicant extends PrimeImplicant"\
 "{"\
@@ -1008,7 +864,6 @@
 "        if ($print_src) $this->print_table();"\
 "        $this->init();"\
 "        $this->analyze();"\
-"        var_dump($this->pi_groups);"\
 "        $this->mini();"\
 "    }"\
 "    "\
@@ -1072,10 +927,22 @@
 "                }"\
 "            }"\
 "        }"\
+"        var_dump($this->pi_groups);"\
 "        var_dump($validates);"\
-"        foreach($validates as $p_key => $m_key)"\
+"        foreach($validates as $p_key => &$m_key)"\
 "        {"\
+"            foreach($this->pi_table[$p_key] as $item)"\
+"            {"\
+"                if (! in_array($item, $m_key)){"\
+"                    if (!isset($m_key[\"summary\"]))"\
+"                    {"\
+"                        $m_key[\"summary\"] = array();"\
+"                    }"\
+"                    array_push($m_key[\"summary\"], $item);"\
+"                }"\
+"            }"\
 "        }"\
+"        var_dump($validates);"\
 "    }"\
 "    protected function get_single()"\
 "    {"\
@@ -1114,7 +981,7 @@
 "    {"\
 "        $input = rtrim(fgets(STDIN));"\
 "        array_push($this->input, $input);"\
-"        while($input != \".e\")"\
+"        while($input !== \".e\")"\
 "        {"\
 "            $input = rtrim(fgets(STDIN));"\
 "            array_push($this->input, $input);"\

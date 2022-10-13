@@ -35,11 +35,13 @@ class PrimeImplicant extends OBDD
         while (1)
         {
             $n = count($this->pi_analyze_logs);
+            $pre_insert = array();
             for ($i = 0; $i < $n; $i++) {
                 for ($j = $i + 1; $j < $n; $j++) {
                     $first = $this->pi_analyze_logs[$i]["equation"];
                     $second = $this->pi_analyze_logs[$j]["equation"];
                     $diff = $this->get_diff($first, $second);
+//                    echo $first . " & " . $second . " " . (substr_count($second, "1") - substr_count($first, "1")) . PHP_EOL;
                     if (
                         count($diff) === 1 &&
                         (substr_count($second, "1") - substr_count($first, "1") === 1) &&
@@ -53,16 +55,24 @@ class PrimeImplicant extends OBDD
                         $new_equation = str_split($first);
                         $new_equation[$diff[0]] = "-";
                         $new_equation = join("", $new_equation);
-                        array_push($this->pi_analyze_logs, array(
-                            "equation" => $new_equation,
-                            "combined" => false
-                        ));
+//                        echo $first . " & " . $second . " => " . $new_equation . PHP_EOL;
+                        array_push($pre_insert, $new_equation);
                     }
                 }
             }
             $this->pi_analyze_logs = array_values(array_filter($this->pi_analyze_logs, function($item) {
                 return !$item["combined"];
             }));
+//            var_dump($pre_insert);
+            foreach(array_unique($pre_insert) as $insert)
+            {
+                array_push($this->pi_analyze_logs, array(
+                    "equation" => $insert,
+                    "combined" => false
+                ));
+            }
+//            var_dump($this->pi_analyze_logs);
+
             $this->pi_analyze_logs = array_map(function($item) {
                 return array(
                     "equation" => $item,
@@ -78,7 +88,10 @@ class PrimeImplicant extends OBDD
                 break;
             }
             $change = 0;
+//            var_dump($this->pi_analyze_logs);
+
         }
+//        var_dump($this->pi_groups);
     }
 
     /**
@@ -152,6 +165,13 @@ class PrimeImplicant extends OBDD
         foreach ($this->pi_groups as &$pi_group)
         {
             $pi_group = array_unique($pi_group);
+            foreach ($pi_group as $item)
+            {
+                array_push($this->pi_analyze_logs, array(
+                    "equation" => $item,
+                    "combined" => false,
+                ));
+            }
         }
     }
 

@@ -1,6 +1,0 @@
-digraph EssentialPrimeImplicant {
-
-    0 [label="0", shape=box]
-    32 [label="1", shape=box]
-
-}

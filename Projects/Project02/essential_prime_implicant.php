@@ -5,6 +5,7 @@ class EssentialPrimeImplicant extends PrimeImplicant
 {
     protected $m_table;
     protected $pi_table;
+    protected $summary_table;
 
     public function render($print_src = false)
     {
@@ -25,6 +26,7 @@ class EssentialPrimeImplicant extends PrimeImplicant
         $this->pi_analyze_logs = array();
         $this->m_table = array();
         $this->pi_table = array();
+        $this->summary_table = array();
         for ($index = 0; $index <= count($this->variables); $index ++)
             $this->pi_groups[$index] = array();
         foreach ($this->pi_groups as $pi_group)
@@ -80,12 +82,25 @@ class EssentialPrimeImplicant extends PrimeImplicant
                 }
             }
         }
-        var_dump($validates);
-        foreach($validates as $p_key => $m_key)
+        foreach($validates as $p_key => &$m_key)
         {
-//            var_dump($p_key);
-//            var_dump($m_key);
+            foreach($this->pi_table[$p_key] as $item)
+            {
+                if (! in_array($item, $m_key)){
+                    if (!isset($m_key["summary"]))
+                    {
+                        $m_key["summary"] = array();
+                    }
+                    if (!isset($this->summary_table[$item]))
+                        $this->summary_table[$item] = array();
+
+                    array_push($m_key["summary"], $item);
+                    array_push($this->summary_table[$item], $p_key);
+                }
+            }
         }
+        var_dump($this->summary_table);
+        $this->calc();
     }
 
     protected function get_single()
@@ -101,5 +116,48 @@ class EssentialPrimeImplicant extends PrimeImplicant
             );
         });
         return $result;
+    }
+
+    protected function calc()
+    {
+        $keys = array_keys($this->summary_table);
+        $result = array();
+        foreach ($keys as $main) {
+            array_push($result, array_map(function($item) {
+                return array($item);
+            }, $this->summary_table[$main]));
+        }
+        var_dump($result);
+        die();
+        for ($index = 0; $index < count($result) - 1; $index ++)
+        {
+            $first_obj = $result[0];
+            $second_obj = $result[1];
+            foreach($first_obj as &$first) {
+                foreach($second_obj as &$second) {
+                    array_push($second, $first);
+                }
+            }
+            var_dump($second_obj);
+            die();
+        }
+        while(count($result) > 1)
+        {
+            $temp = array();
+            $first_obj = $result[0];
+            $second_obj = $result[1];
+            unset($result[0]);
+            unset($result[1]);
+            $result = array_values($result);
+            foreach($first_obj as $first) {
+                foreach ($second_obj as $second) {
+                    array_push($temp, array(
+                        $first, $second
+                    ));
+                }
+            }
+            array_push($result, $temp);
+        }
+        var_dump($result);
     }
 }

@@ -94,7 +94,7 @@ class ROBDD extends OBDD {
         $result = array();
         foreach ($this->get_available() as $item)
         {
-            if ($item["then"] == $item["catch"])
+            if ($item["then"] === $item["catch"])
             {
                 array_push($result, $item);
             }
@@ -146,11 +146,11 @@ class ROBDD extends OBDD {
         {
             return;
         }
-        $obj["then"] = $obj["then"] == $src ? $target : $obj["then"];
-        $obj["catch"] = $obj["catch"] == $src ? $target : $obj["catch"];
+        $obj["then"] = $obj["then"] === $src ? $target : $obj["then"];
+        $obj["catch"] = $obj["catch"] === $src ? $target : $obj["catch"];
         $this->data[$index] = $obj;
 
-        if ($obj["then"] == $obj["catch"])
+        if ($obj["then"] === $obj["catch"])
         {
             $target = $obj["then"];
             foreach ($this->get_depends($obj["id"]) as $depend)
@@ -171,7 +171,7 @@ class ROBDD extends OBDD {
         $result = array();
         foreach ($this->get_available() as $item)
         {
-            if ($item["then"] == $id || $item["catch"] == $id)
+            if ($item["then"] === $id || $item["catch"] === $id)
             {
                 array_push($result, $item);
             }
