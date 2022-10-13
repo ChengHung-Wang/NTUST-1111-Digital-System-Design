@@ -11,9 +11,7 @@ class EssentialPrimeImplicant extends PrimeImplicant
         if (! $this->read_end) return;
         if ($print_src) $this->print_table();
         $this->init();
-        var_dump($this->pi_groups);
-
-        $this->simple();
+        $this->analyze();
         $this->mini();
     }
 
@@ -24,11 +22,21 @@ class EssentialPrimeImplicant extends PrimeImplicant
     protected function init()
     {
         $this->pi_groups = array();
+        $this->pi_analyze_logs = array();
         $this->m_table = array();
         $this->pi_table = array();
         for ($index = 0; $index <= count($this->variables); $index ++)
             $this->pi_groups[$index] = array();
-        $this->group();
+        foreach ($this->pi_groups as $pi_group)
+        {
+            foreach ($pi_group as $item)
+            {
+                array_push($this->pi_analyze_logs, array(
+                    "equation" => $item,
+                    "combined" => false,
+                ));
+            }
+        }
     }
 
     protected function mini()
@@ -72,6 +80,7 @@ class EssentialPrimeImplicant extends PrimeImplicant
                 }
             }
         }
+        var_dump($validates);
         foreach($validates as $p_key => $m_key)
         {
 //            var_dump($p_key);

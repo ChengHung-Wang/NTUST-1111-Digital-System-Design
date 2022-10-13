@@ -3,13 +3,117 @@ require_once("./obdd.php");
 class PrimeImplicant extends OBDD
 {
     protected $pi_groups;
-
+    protected $pi_analyze_logs;
     public function render($print_src = false)
     {
         if (! $this->read_end) return;
         if ($print_src) $this->print_table();
         $this->init();
-        $this->simple();
+        $this->analyze();
+    }
+
+    /**
+     * group & simplification
+     * @return void
+     */
+    protected function analyze()
+    {
+        $change = 0;
+        foreach($this->rules as $rule) {
+            foreach($this->eval_all(join("", $rule["spell"])) as $item)
+            {
+                array_push($this->pi_analyze_logs, $item);
+            }
+        }
+        sort($this->pi_analyze_logs);
+        $this->pi_analyze_logs = array_map(function($item) {
+            return array(
+                "equation" => $item,
+                "combined" => false
+            );
+        }, array_values(array_unique($this->pi_analyze_logs)));
+        while (1)
+        {
+            $n = count($this->pi_analyze_logs);
+            for ($i = 0; $i < $n; $i++) {
+                for ($j = $i + 1; $j < $n; $j++) {
+                    $first = $this->pi_analyze_logs[$i]["equation"];
+                    $second = $this->pi_analyze_logs[$j]["equation"];
+                    $diff = $this->get_diff($first, $second);
+                    if (
+                        count($diff) === 1 &&
+                        (substr_count($second, "1") - substr_count($first, "1") === 1) &&
+                        strlen(str_replace("-", "", $first)) > 2 &&
+                        strlen(str_replace("-", "", $second)) > 2
+                    )
+                    {
+                        $this->pi_analyze_logs[$i]["combined"] = true;
+                        $this->pi_analyze_logs[$j]["combined"] = true;
+                        $change ++;
+                        $new_equation = str_split($first);
+                        $new_equation[$diff[0]] = "-";
+                        $new_equation = join("", $new_equation);
+                        array_push($this->pi_analyze_logs, array(
+                            "equation" => $new_equation,
+                            "combined" => false
+                        ));
+                    }
+                }
+            }
+            $this->pi_analyze_logs = array_values(array_filter($this->pi_analyze_logs, function($item) {
+                return !$item["combined"];
+            }));
+            $this->pi_analyze_logs = array_map(function($item) {
+                return array(
+                    "equation" => $item,
+                    "combined" => false
+                );
+            }, array_values(array_unique(array_map(function($item) {
+                return $item["equation"];
+            }, $this->pi_analyze_logs))));
+
+            if ($change === 0)
+            {
+                $this->group($this->pi_analyze_logs);
+                break;
+            }
+            $change = 0;
+        }
+    }
+
+    /**
+     * get_diff
+     * @param string $first
+     * @param string $second
+     * @return array
+     */
+    protected function get_diff($first, $second)
+    {
+        $result = array();
+
+        if (strlen($first) === strlen($second))
+        {
+            $first = str_split($first);
+            $second = str_split($second);
+            foreach($first as $index => $item)
+            {
+                if (
+                    ($item === "-" && $second[$index] !== "-") ||
+                    ($second[$index] === "-" && $item !== "-")
+                )
+                {
+                    return array();
+                }
+                if (
+                    ($item === "0" && $second[$index] === "1") ||
+                    ($item === "1" && $second[$index] === "0")
+                )
+                {
+                    array_push($result, $index);
+                }
+            }
+        }
+        return $result;
     }
 
     /**
@@ -19,79 +123,36 @@ class PrimeImplicant extends OBDD
     protected function init()
     {
         $this->pi_groups = array();
+        $this->pi_analyze_logs = array();
         for ($index = 0; $index <= count($this->variables); $index ++)
             $this->pi_groups[$index] = array();
-        $this->group();
+        foreach ($this->pi_groups as $pi_group)
+        {
+            foreach ($pi_group as $item)
+            {
+                array_push($this->pi_analyze_logs, array(
+                    "equation" => $item,
+                    "combined" => false,
+                ));
+            }
+        }
     }
 
-    protected function group()
+    /**
+     * group by "1" count
+     * @param array $data
+     */
+    protected function group($data)
     {
-        foreach ($this->rules as $rule)
+        foreach ($data as $rule)
         {
-            foreach($this->eval_all(join("", $rule["spell"])) as $item)
-            {
-                $index = substr_count($item, "1");
-                array_push($this->pi_groups[$index], $item);
-            }
+            $index = substr_count($rule["equation"], "1");
+            array_push($this->pi_groups[$index], $rule["equation"]);
         }
         foreach ($this->pi_groups as &$pi_group)
         {
             $pi_group = array_unique($pi_group);
         }
-    }
-
-    /**
-     * simple(depends on $this->combine(int))
-     * @return void
-     */
-    protected function simple()
-    {
-        for ($i = 0; $i < (count($this->variables) - 2); $i ++)
-        {
-            $new_pi_groups = array();
-            for ($index = 0; ($index < count($this->pi_groups) - 1); $index ++)
-            {
-                if (isset($this->pi_groups[$index]) && isset($this->pi_groups[$index + 1]))
-                {
-                    $new_pi_groups[$index] = $this->combine($index);
-                }
-            }
-//            var_dump($new_pi_groups);
-            $this->pi_groups = $new_pi_groups;
-        }
-    }
-
-    /**
-     * prime implicant combine(ex: 0000, 0001 => 000-)
-     * @return array
-     */
-    protected function combine($index)
-    {
-        $result = array();
-        if (!isset($this->pi_groups[$index]) || !isset($this->pi_groups[$index + 1])) return array();
-        foreach($this->pi_groups[$index] as $now)
-        {
-            foreach($this->pi_groups[$index + 1] as $next)
-            {
-                $diff = -1;
-                $num = 0;
-                for ($t_index = 0; $t_index < count($this->variables); $t_index ++)
-                {
-                    if ($now[$t_index] !== $next[$t_index])
-                    {
-                        $diff = $t_index;
-                        $num ++;
-                    }
-                }
-                if ($num === 1)
-                {
-                    $find = $now;
-                    $find[$diff] = "-";
-                    array_push($result, $find);
-                }
-            }
-        }
-        return array_unique($result);
     }
 
     /**
@@ -101,7 +162,6 @@ class PrimeImplicant extends OBDD
      */
     protected function eval_all($str)
     {
-
         $result = array();
         $this->guess($str, $result);
         return $result;
@@ -132,4 +192,3 @@ class PrimeImplicant extends OBDD
         }
     }
 }
-
