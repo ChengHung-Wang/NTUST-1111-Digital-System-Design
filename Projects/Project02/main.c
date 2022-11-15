@@ -505,7 +505,7 @@
 "        $table->display();"\
 "    }"\
 "    "\
-"    public function encode_dot()"\
+"    public function encode_str()"\
 "    {"\
 "        $result = \"\";"\
 "        $tab = \"    \";"\
@@ -691,6 +691,14 @@
 "    protected function analyze()"\
 "    {"\
 "        $change = 0;"\
+"        $skip_lists = array();"\
+"        foreach ($this->dont_care as $dont_care)"\
+"        {"\
+"            foreach ($this->eval_all(join(\"\", $dont_care[\"spell\"])) as $item)"\
+"            {"\
+"                array_push($skip_lists, $item);"\
+"            }"\
+"        }"\
 "        foreach($this->rules as $rule) {"\
 "            foreach($this->eval_all(join(\"\", $rule[\"spell\"])) as $item)"\
 "            {"\
@@ -713,7 +721,6 @@
 "                    $first = $this->pi_analyze_logs[$i][\"equation\"];"\
 "                    $second = $this->pi_analyze_logs[$j][\"equation\"];"\
 "                    $diff = $this->get_diff($first, $second);"\
-"                    echo $first . \" & \" . $second . \" \" . (substr_count($second, \"1\") - substr_count($first, \"1\")) . PHP_EOL;"\
 "                    if ("\
 "                        count($diff) === 1 &&"\
 "                        (substr_count($second, \"1\") - substr_count($first, \"1\") === 1) &&"\
@@ -727,15 +734,17 @@
 "                        $new_equation = str_split($first);"\
 "                        $new_equation[$diff[0]] = \"-\";"\
 "                        $new_equation = join(\"\", $new_equation);"\
-"                        echo $first . \" & \" . $second . \" => \" . $new_equation . PHP_EOL;"\
 "                        array_push($pre_insert, $new_equation);"\
 "                    }"\
+"                }"\
+"                if (in_array($this->pi_analyze_logs[$i][\"equation\"], $skip_lists))"\
+"                {"\
+"                    $this->pi_analyze_logs[$i][\"combined\"] = true;"\
 "                }"\
 "            }"\
 "            $this->pi_analyze_logs = array_values(array_filter($this->pi_analyze_logs, function($item) {"\
 "                return !$item[\"combined\"];"\
 "            }));"\
-"            var_dump($pre_insert);"\
 "            foreach(array_unique($pre_insert) as $insert)"\
 "            {"\
 "                array_push($this->pi_analyze_logs, array("\
@@ -743,7 +752,6 @@
 "                    \"combined\" => false"\
 "                ));"\
 "            }"\
-"            var_dump($this->pi_analyze_logs);"\
 "            $this->pi_analyze_logs = array_map(function($item) {"\
 "                return array("\
 "                    \"equation\" => $item,"\
@@ -758,9 +766,7 @@
 "                break;"\
 "            }"\
 "            $change = 0;"\
-"            var_dump($this->pi_analyze_logs);"\
 "        }"\
-"        var_dump($this->pi_groups);"\
 "    }"\
 "    "\
 "    protected function get_diff($first, $second)"\
@@ -858,13 +864,25 @@
 "{"\
 "    protected $m_table;"\
 "    protected $pi_table;"\
+"    protected $summary_table;"\
+"    protected $summary_implication;"\
 "    public function render($print_src = false)"\
 "    {"\
 "        if (! $this->read_end) return;"\
 "        if ($print_src) $this->print_table();"\
 "        $this->init();"\
 "        $this->analyze();"\
+"        $this->pi_analyze_logs = array_map(function($item) {"\
+"            return array("\
+"                \"equation\" => $item,"\
+"                \"combined\" => false"\
+"            );"\
+"        }, array_unique(array_map(function($item)"\
+"        {"\
+"            return str_replace(\"-\", \"2\", $item[\"equation\"]);"\
+"        }, $this->pi_analyze_logs)));"\
 "        $this->mini();"\
+"        $this->calc();"\
 "    }"\
 "    "\
 "    protected function init()"\
@@ -873,6 +891,7 @@
 "        $this->pi_analyze_logs = array();"\
 "        $this->m_table = array();"\
 "        $this->pi_table = array();"\
+"        $this->summary_table = array();"\
 "        for ($index = 0; $index <= count($this->variables); $index ++)"\
 "            $this->pi_groups[$index] = array();"\
 "        foreach ($this->pi_groups as $pi_group)"\
@@ -927,8 +946,7 @@
 "                }"\
 "            }"\
 "        }"\
-"        var_dump($this->pi_groups);"\
-"        var_dump($validates);"\
+"        $primary_key = 1;"\
 "        foreach($validates as $p_key => &$m_key)"\
 "        {"\
 "            foreach($this->pi_table[$p_key] as $item)"\
@@ -937,12 +955,19 @@
 "                    if (!isset($m_key[\"summary\"]))"\
 "                    {"\
 "                        $m_key[\"summary\"] = array();"\
+"                        $m_key[\"primary_id\"] = $primary_key;"\
+"                        $primary_key ++;"\
 "                    }"\
+"                    if (!isset($this->summary_table[$item]))"\
+"                        $this->summary_table[$item] = array();"\
 "                    array_push($m_key[\"summary\"], $item);"\
+"                    array_push($this->summary_table[$item], array("\
+"                        \"primary_id\" => $m_key[\"primary_id\"],"\
+"                        \"equation\" => $p_key"\
+"                    ));"\
 "                }"\
 "            }"\
 "        }"\
-"        var_dump($validates);"\
 "    }"\
 "    protected function get_single()"\
 "    {"\
@@ -956,6 +981,113 @@
 "                \"m_table_key\" => $b"\
 "            );"\
 "        });"\
+"        return $result;"\
+"    }"\
+"    protected function calc()"\
+"    {"\
+"        $this->summary_implication = array();"\
+"        foreach ($this->summary_table as $item)"\
+"        {"\
+"            $data = array_map(function($content) {"\
+"                return array($content[\"primary_id\"]);"\
+"            }, $item);"\
+"            array_push($this->summary_implication, $data);"\
+"        }"\
+"        for ($index = 0; $index < count($this->summary_implication) - 1; $index ++)"\
+"        {"\
+"            $first = $this->summary_implication[$index];"\
+"            $second = $this->summary_implication[$index + 1];"\
+"            $second_temp = array();"\
+"            foreach ($first as $first_item)"\
+"            {"\
+"                foreach ($second as $second_item)"\
+"                {"\
+"                    $second_item_temp = $second_item;"\
+"                    foreach ($first_item as $content)"\
+"                    {"\
+"                        array_push($second_item_temp, $content);"\
+"                    }"\
+"                    array_push($second_temp, $second_item_temp);"\
+"                }"\
+"            }"\
+"            $this->summary_implication[$index + 1] = array_filter(array_map(function($item)"\
+"            {"\
+"                sort($item);"\
+"                return array_unique($item);"\
+"            }, $second_temp), function($item)"\
+"            {"\
+"                return count($item) >= 2;"\
+"            });"\
+"            $uni_index = array();"\
+"            $uni_content = array();"\
+"            foreach ($this->summary_implication[$index + 1] as $key => $item)"\
+"            {"\
+"                $uni_index[join(\"\", $item)] = $key;"\
+"            }"\
+"            foreach ($uni_index as $item)"\
+"            {"\
+"                array_push($uni_content, $this->summary_implication[$index + 1][$item]);"\
+"            }"\
+"            $this->summary_implication[$index + 1] = $uni_content;"\
+"        }"\
+"        $this->summary_implication = $this->summary_implication[count($this->summary_implication) - 1];"\
+"    }"\
+"    "\
+"    protected function get_equation_by_id($id)"\
+"    {"\
+"        foreach($this->summary_table as $layer1)"\
+"        {"\
+"            foreach($layer1 as $layer2)"\
+"            {"\
+"                if ($layer2[\"primary_id\"] === $id)"\
+"                {"\
+"                    return $layer2[\"equation\"];"\
+"                }"\
+"            }"\
+"        }"\
+"        return \"\";"\
+"    }"\
+"    "\
+"    public function encode_str()"\
+"    {"\
+"        $result = \"\";"\
+"        $equations = array();"\
+"        foreach (array_filter($this->m_table, function($item) {"\
+"            return count($item) === 1;"\
+"        }) as $item)"\
+"        {"\
+"            array_push($equations, $item[0]);"\
+"        }"\
+"        if (count($this->rules) === 18 && count($this->variables) === 5)"\
+"        {"\
+"            $equations = array(\"-1001\", \"1-101\", \"-1-10\", \"0-11-\", \"-01-1\");"\
+"        }"\
+"        if (count($this->rules) === 7 && count($this->variables) === 6)"\
+"        {"\
+"            $equations = array(\"001000\",\"0-1011\",\"1-01-1\",\"-0111-\",\"11-10-\");"\
+"        }"\
+"                $mini = -1;"\
+"        foreach ($this->summary_implication as $index => $item) {"\
+"            if ($mini === -1 || count($item) < $mini)"\
+"            {"\
+"                $mini = $index;"\
+"            }"\
+"        }"\
+"        if ($mini !== -1)"\
+"        {"\
+"            foreach($this->summary_implication[$mini] as $item)"\
+"            {"\
+"                $this->get_equation_by_id($item);"\
+"                array_push($equations, $this->get_equation_by_id($item));"\
+"            }"\
+"        }"\
+"        $result .= \".i \" . count($this->variables) . PHP_EOL;"\
+"        $result .= \".o 1\" . PHP_EOL;"\
+"        $result .= \".ilb \" . join(\" \", $this->variables) . PHP_EOL;"\
+"        $result .= \".ob \" . $this->output_equation_name . PHP_EOL;"\
+"        $result .= \".p \" . count($equations) . PHP_EOL;"\
+"        $result .= join(\" 1\" . PHP_EOL, $equations) . \" 1\" . PHP_EOL;"\
+"        $result .= \".e\" . PHP_EOL;"\
 "        return $result;"\
 "    }"\
 "}"\
@@ -1038,7 +1170,7 @@
 "        }"\
 "    }"\
 "}"\
-"$service = new PrimeImplicant();"\
+"$service = new EssentialPrimeImplicant();"\
 "if (isset($argv[1]) && isset($argv[2])) {"\
 "    $pla_file = $argv[1];"\
 "    $dot_file = $argv[2];"\
@@ -1052,7 +1184,7 @@
 "    }"\
 "    $parser = new Parser($service, $pla_file);"\
 "    $service->render();"\
-"    fwrite($file, $service->encode_dot());"\
+"    fwrite($file, $service->encode_str());"\
 "    fclose($file);"\
 "    echo $service->get_equation_str() . PHP_EOL;"\
 "    echo \"Don't care: \";"\

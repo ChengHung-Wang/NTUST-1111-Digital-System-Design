@@ -26,7 +26,8 @@ for ($index = 0; $index < count($data) - 1; $index ++)
         foreach($second as &$second_item)
         {
             $second_item_temp = $second_item;
-            foreach ($first_item as $content) {
+            foreach ($first_item as $content)
+            {
                 array_push($second_item_temp, $content);
             }
             array_push($second_temp, $second_item_temp);
@@ -42,10 +43,12 @@ for ($index = 0; $index < count($data) - 1; $index ++)
     });
     $uni_index = array();
     $uni_content = array();
-    foreach($data[$index + 1] as $key => $item) {
+    foreach($data[$index + 1] as $key => $item)
+    {
         $uni_index[join("", $item)] = $key;
     }
-    foreach ($uni_index as $item) {
+    foreach ($uni_index as $item)
+    {
         array_push($uni_content, $data[$index + 1][$item]);
     }
     $data[$index + 1] = $uni_content;
