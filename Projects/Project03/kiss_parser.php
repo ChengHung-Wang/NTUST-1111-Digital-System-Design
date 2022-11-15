@@ -116,7 +116,6 @@ class KissParser {
                     array_push($this->variables, $var_name);
                 }
 
-//                $next_var_exists = in_array($next_var, $this->variables);
                 if (count($this->rules) < $this->rule_amount) {
                     array_push($this->rules, array(
                         "input" => $input,

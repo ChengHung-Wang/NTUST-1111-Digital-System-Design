@@ -1,12 +1,13 @@
 <?php
+require_once "./configurations.php";
 require_once "./models/variables.php";
 require_once "./models/rules.php";
 require_once "./models/implications.php";
 
+use Config\Debug;
 use DB\Rules;
 use DB\Variables;
 use DB\Implications;
-use SleekDB\Exceptions\IOException;
 
 class StateMinimization
 {
@@ -16,6 +17,11 @@ class StateMinimization
     protected $variables;
     protected $rules;
     protected $implications;
+
+    /**
+     * Debug print
+     */
+    protected $debug;
 
     /**
      * @var int $input_count
@@ -50,13 +56,15 @@ class StateMinimization
         $this->variables = new Variables();
         $this->rules = new Rules();
         $this->implications = new Implications();
+        $this->debug = new Debug();
     }
 
     public function render()
     {
         if (! $this->init_done)
             return;
-//        $this->init_gauss_table();
+        $this->fill_lower_triangle();
+        $this->judge_implication_block();
     }
 
     // util
@@ -117,86 +125,72 @@ class StateMinimization
     /**
      * init gauss table
      */
-    protected function init_gauss_table() {
-        try {
-            $all_var = $this->variables->db->findAll();
-            for ($index = 0; $index < $this->variables->db->count() - 1; $index++) {
-                $this->implication_table[$this->variables[$index]["name"]] = array();
-                for ($col_index = $index + 1; $col_index < count($this->variables); $col_index++) {
-                    $this_block = array();
-                    $primary_output = array();
-                    foreach ($this->get_rule_by_var_name($this->variables[$index]["name"]) as $value) {
-                        $sub_obj["from"] = $value;
-                        $sub_obj["next"] = $this->get_rule_by_var_name($this->variables[$col_index]["name"], $value["input"]);
-                        $sub_obj["dont_care"] = $sub_obj["from"]["next_variable"] === $sub_obj["next"]["next_variable"];
-                        $this_block[$value["input"]] = $sub_obj;
-                        array_push($primary_output, $value["output"]);
-                    }
-                    $this->implication_table[$this->variables[$index]["name"]][$this->variables[$col_index]["name"]] = $this_block;
-                }
+    protected function fill_lower_triangle() {
+        foreach ($this->variables->get(null, -1) as $index => $row) {
+            foreach ($this->variables->get(1 + $index) as $col) {
+                $this->implications->insert($row["id"], $col["id"]);
             }
-        } catch (IOException | \SleekDB\Exceptions\InvalidArgumentException $e)
-        {}
-        // mark disabled
-        foreach($this->get_not_compatibles() as $not_compatible_var)
-        {
-            foreach ($this->implication_table as $row_index => &$row_content)
+        }
+        $this->debug->success("Success: StateMinimization::fill_lower_triangle()");
+    }
+
+    protected function judge_implication_block() {
+        do {
+            $block_change = false;
+            foreach($this->implications->get() as $implication)
             {
-                foreach ($row_content as $col_index => &$col_content)
+                if ($implication["disabled"] === false)
                 {
-                    $disabled = (
-                        $row_index === $not_compatible_var ||
-                        $col_index === $not_compatible_var
-                    );
-                    foreach($col_content as &$col_item)
+                    foreach ($implication["diff_of_output"] as $item)
                     {
-                        if (!$disabled) {
-                            $disabled = ($col_item["from"]["next_variable"] === $not_compatible_var || $col_item["next"]["next_variable"] === $not_compatible_var);
+                        if (count(array_unique($item)) !== 1) {
+                            $this->implications->set_disabled($implication["id"]);
+                            $block_change = true;
+                            $this->debug->info($this->variables->find($implication["first_judge_var_id"])["name"] . "->" . $this->variables->find($implication["second_judge_var_id"])["name"] . " has disabled.");
                         }
-                        $col_item["disabled"] = $disabled;
                     }
                 }
             }
-        }
-//        var_dump($this->implication_table);
+        } while($block_change === true && $this->debug->warning("Warning: StateMinimization::judge_implication_block() loop again"));
+        $this->debug->success("Success: StateMinimization::judge_implication_block()");
     }
 
-    /**
-     * @param string $name
-     * @param null|string $signal
-     * @return array|mixed
-     */
-    protected function get_rule_by_var_name(string $name, string $signal = null)
-    {
-        $filter = array_filter($this->rules, function($item) use($name)
-        {
-            return $item["variable"] === $name;
-        });
-        $result = array();
-        foreach ($filter as $content)
-        {
-            $result[$content['input']] = $content;
-        }
-        return $signal === null ? $result : $result[$signal];
-    }
-
-    /**
-     * get not compatibles
-     * @return array
-     */
-    protected function get_not_compatibles(): array
-    {
-        $not_compatibles = array();
-        foreach($this->variables as $variable)
-        {
-            $output = array();
-            foreach($this->get_rule_by_var_name($variable["name"]) as $content) {
-                array_push($output, $content["output"]);
-            }
-            if (count(array_unique($output)) !== 1) {
-                array_push($not_compatibles, $variable["name"]);
-            }
-        }
-        return array_unique($not_compatibles);
-    }
+//    /**
+//     * @param string $name
+//     * @param null|string $signal
+//     * @return array|mixed
+//     */
+//    protected function get_rule_by_var_name(string $name, string $signal = null)
+//    {
+//        $filter = array_filter($this->rules, function($item) use($name)
+//        {
+//            return $item["variable"] === $name;
+//        });
+//        $result = array();
+//        foreach ($filter as $content)
+//        {
+//            $result[$content['input']] = $content;
+//        }
+//        return $signal === null ? $result : $result[$signal];
+//    }
+//
+//    /**
+//     * get not compatibles
+//     * @return array
+//     */
+//    protected function get_not_compatibles(): array
+//    {
+//        $not_compatibles = array();
+//        foreach($this->variables as $variable)
+//        {
+//            $output = array();
+//            foreach($this->get_rule_by_var_name($variable["name"]) as $content) {
+//                array_push($output, $content["output"]);
+//            }
+//            if (count(array_unique($output)) !== 1) {
+//                array_push($not_compatibles, $variable["name"]);
+//            }
+//        }
+//        return array_unique($not_compatibles);
+//    }
 }
