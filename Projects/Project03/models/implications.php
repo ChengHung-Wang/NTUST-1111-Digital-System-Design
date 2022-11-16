@@ -6,7 +6,6 @@ use SleekDB\Exceptions\IOException;
 use SleekDB\Exceptions\JsonException;
 
 class Implications extends Table {
-    protected $db;
     public function __construct()
     {
         parent::__construct();
@@ -80,10 +79,58 @@ class Implications extends Table {
                 ->join(function ($el) use ($rules_table) {
                     return $rules_table->findBy(["variable_id", "=", $el["second_judge_var_id"]]);
                 }, "second")
+                ->orderBy(array("id" => "asc"))
                 ->getQuery()->fetch());
 
         } catch (IOException | InvalidArgumentException $e) {
             die("ERROR: get all implications detail.\n");
         }
+    }
+
+    /**
+     * @param int $first_variable_id
+     * @param int $second_variable_id
+     * @return bool
+     * @throws IOException
+     * @throws InvalidArgumentException
+     */
+    public function is_disabled(int $first_variable_id, int $second_variable_id): bool
+    {
+        if ($first_variable_id === $second_variable_id) {
+            return false;
+        }
+        $result = $this->db->createQueryBuilder()
+            ->where(array(
+                array("first_judge_var_id", "=", $first_variable_id),
+                array("second_judge_var_id", "=", $second_variable_id),
+                array("disabled", "=", true)
+            ))
+            ->orWhere(array(
+                array("first_judge_var_id", "=", $second_variable_id),
+                array("second_judge_var_id", "=", $first_variable_id),
+                array("disabled", "=", true)
+            ))
+            ->getQuery()
+            ->fetch();
+//        if ($first_variable_id == 2 && $second_variable_id == 4)
+//        {
+//            $this->debug->info(json_encode($this->db->createQueryBuilder()
+//                ->where(array(
+//                    array("first_judge_var_id", "=", $first_variable_id),
+//                    array("second_judge_var_id", "=", $second_variable_id),
+//                ))
+//                ->orWhere(array(
+//                    array("first_judge_var_id", "=", $second_variable_id),
+//                    array("second_judge_var_id", "=", $first_variable_id),
+//                ))
+//                ->getQuery()
+//                ->fetch(), JSON_PRETTY_PRINT));
+//        }
+//        $this->debug->info(json_encode(array(
+//            "data" => $result,
+//            "first" => $first_variable_id,
+//            "second" => $second_variable_id
+//        )));
+        return count($result) > 0;
     }
 }

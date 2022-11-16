@@ -7,8 +7,6 @@ use SleekDB\Exceptions\IOException;
 use SleekDB\Exceptions\JsonException;
 
 class Variables extends Table {
-    public $db;
-
     /**
      * data table init
      */
@@ -76,20 +74,20 @@ class Variables extends Table {
     {
         return $this->find_by("name", $name);
     }
-
-    /**
-     * @param string $col_name
-     * @param string|int $content
-     * @param bool $single
-     * @return array
-     */
-    protected function find_by(string $col_name, $content, bool $single = true): array
-    {
-        try {
-            $result = $this->db->createQueryBuilder()->where(array($col_name, "=", $content))->getQuery();
-            return $single ? $result->first() : $result->fetch();
-        } catch (IOException | InvalidArgumentException $e) {
-            return array(DB::$configuration["primary_key"] => -1);
-        }
-    }
+//
+//    /**
+//     * @param string $col_name
+//     * @param string|int $content
+//     * @param bool $single
+//     * @return array
+//     */
+//    protected function find_by(string $col_name, $content, bool $single = true): array
+//    {
+//        try {
+//            $result = $this->db->createQueryBuilder()->where(array($col_name, "=", $content))->getQuery();
+//            return $single ? $result->first() : $result->fetch();
+//        } catch (IOException | InvalidArgumentException $e) {
+//            return array(DB::$configuration["primary_key"] => -1);
+//        }
+//    }
 }

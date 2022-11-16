@@ -101,7 +101,8 @@ class StateMinimization
     /**
      * set read end
      */
-    public function ready() {
+    public function ready()
+    {
         $this->init_done = true;
     }
 
@@ -125,25 +126,35 @@ class StateMinimization
     /**
      * init gauss table
      */
-    protected function fill_lower_triangle() {
-        foreach ($this->variables->get(null, -1) as $index => $row) {
-            foreach ($this->variables->get(1 + $index) as $col) {
+    protected function fill_lower_triangle()
+    {
+        foreach ($this->variables->get(null, -1) as $index => $row)
+        {
+            foreach ($this->variables->get(1 + $index) as $col)
+            {
                 $this->implications->insert($row["id"], $col["id"]);
             }
         }
         $this->debug->success("Success: StateMinimization::fill_lower_triangle()");
     }
 
-    protected function judge_implication_block() {
+    /**
+     * @throws \SleekDB\Exceptions\IOException
+     * @throws \SleekDB\Exceptions\InvalidArgumentException
+     */
+    protected function judge_implication_block()
+    {
         do {
             $block_change = false;
-            foreach($this->implications->get() as $implication)
+            $data = $this->implications->get();
+            foreach($data as $implication)
             {
                 if ($implication["disabled"] === false)
                 {
                     foreach ($implication["diff_of_output"] as $item)
                     {
-                        if (count(array_unique($item)) !== 1) {
+                        if (count(array_unique($item)) !== 1)
+                        {
                             $this->implications->set_disabled($implication["id"]);
                             $block_change = true;
                             $this->debug->info($this->variables->find($implication["first_judge_var_id"])["name"] . "->" . $this->variables->find($implication["second_judge_var_id"])["name"] . " has disabled.");
@@ -151,46 +162,66 @@ class StateMinimization
                     }
                 }
             }
-        } while($block_change === true && $this->debug->warning("Warning: StateMinimization::judge_implication_block() loop again"));
+            if ($block_change === false)
+            {
+                foreach($data as $implication)
+                {
+                    $has_disabled = false;
+                    if ($implication["disabled"] === true)
+                        continue;
+                    $check_list = array();
+                    foreach ($implication["first"] as $first)
+                    {
+                        if (!isset($check_list[$first["input"]]))
+                            $check_list[$first["input"]] = array();
+                        array_push($check_list[$first["input"]], $first["next_variable_id"]);
+                    }
+                    foreach ($implication["second"] as $second)
+                    {
+                        if (!isset($check_list[$second["input"]]))
+                            $check_list[$second["input"]] = array();
+                        array_push($check_list[$second["input"]], $second["next_variable_id"]);
+                    }
+
+                    foreach ($check_list as $level => $content)
+                    {
+                        if ($has_disabled)
+                            continue;
+                        $level_list = array();
+                        $target_disabled = count($content) >= 2 && $this->implications->is_disabled($content[0], $content[1]);
+                        foreach ($content as $item)
+                        {
+                            foreach ($this->rules->find_by_variable_id($item) as $target)
+                            {
+                                if (!isset($level_list[$target["input"]])) {
+                                    $level_list[$target["input"]] = array();
+                                }
+                                array_push($level_list[$target["input"]], $target["output"]);
+                            }
+                        }
+                        foreach ($level_list as $main)
+                        {
+                            if (count(array_unique($main)) !== 1 || $target_disabled)
+                            {
+                                $this->implications->set_disabled($implication["id"]);
+                                $block_change = true;
+                                $has_disabled = true;
+                                $this->debug->info($this->variables->find($implication["first_judge_var_id"])["name"] . "->" . $this->variables->find($implication["second_judge_var_id"])["name"] . " has disabled(" . ($target_disabled ? "target_disabled" : "") . ").");
+                                break;
+                            }
+                        }
+//                        $this->debug->info(json_encode($output, JSON_PRETTY_PRINT));
+                    }
+                    // debug
+//                    $this->debug->info(json_encode(array_map(function($el) {
+//                        return array_map(function($e) {
+//                            return $this->variables->find($e)["name"];
+//                        }, $el);
+//                    }, $check_list),JSON_PRETTY_PRINT));
+//                    die();
+                }
+            }
+        } while($block_change === true && $this->debug->warning("Warning: StateMinimization::judge_implication_block() loop again."));
         $this->debug->success("Success: StateMinimization::judge_implication_block()");
     }
-
-//    /**
-//     * @param string $name
-//     * @param null|string $signal
-//     * @return array|mixed
-//     */
-//    protected function get_rule_by_var_name(string $name, string $signal = null)
-//    {
-//        $filter = array_filter($this->rules, function($item) use($name)
-//        {
-//            return $item["variable"] === $name;
-//        });
-//        $result = array();
-//        foreach ($filter as $content)
-//        {
-//            $result[$content['input']] = $content;
-//        }
-//        return $signal === null ? $result : $result[$signal];
-//    }
-//
-//    /**
-//     * get not compatibles
-//     * @return array
-//     */
-//    protected function get_not_compatibles(): array
-//    {
-//        $not_compatibles = array();
-//        foreach($this->variables as $variable)
-//        {
-//            $output = array();
-//            foreach($this->get_rule_by_var_name($variable["name"]) as $content) {
-//                array_push($output, $content["output"]);
-//            }
-//            if (count(array_unique($output)) !== 1) {
-//                array_push($not_compatibles, $variable["name"]);
-//            }
-//        }
-//        return array_unique($not_compatibles);
-//    }
 }

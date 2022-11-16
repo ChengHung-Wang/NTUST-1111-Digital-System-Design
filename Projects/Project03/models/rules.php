@@ -1,14 +1,13 @@
 <?php
 namespace DB;
 use Config\DB;
+use Config\Debug;
 use SleekDB\Exceptions\IdNotAllowedException;
 use SleekDB\Exceptions\InvalidArgumentException;
 use SleekDB\Exceptions\IOException;
 use SleekDB\Exceptions\JsonException;
 
 class Rules extends Table {
-    protected $db;
-
     /**
      * data table init
      */
@@ -42,6 +41,24 @@ class Rules extends Table {
             ))[$col_key];
         } catch (IOException | IdNotAllowedException | InvalidArgumentException | JsonException $e) {
             return -1;
+        }
+    }
+
+    /**
+     * @param string $signal
+     * @param int $variable_id
+     * @return array
+     */
+    public function find_by_variable_id(int $variable_id, string $signal = "") : array
+    {
+        try {
+            $result = $this->db->findBy(array("variable_id", "=", $variable_id), array("id" => "asc"));
+            return $signal === "" ? $result : array_values(array_filter($result, function($el) use ($signal) {
+                return $el["input"] === $signal;
+            }))[0];
+        } catch (IOException | InvalidArgumentException $e) {
+            $this->debug->error("ERROR: \DB\Rule()::find_by_variable_id(int, string)");
+            return array();
         }
     }
 

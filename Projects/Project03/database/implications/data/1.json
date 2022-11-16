@@ -1,6 +1,6 @@
 {
     "first_judge_var_id": 1,
     "second_judge_var_id": 2,
-    "disabled": false,
+    "disabled": true,
     "id": 1
 }
