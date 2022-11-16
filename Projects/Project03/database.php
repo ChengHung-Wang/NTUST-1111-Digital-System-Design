@@ -31,7 +31,7 @@ class Table {
             $this->rules = new Store("rules", DB::$databaseDirectory, DB::$configuration);
             $this->implications = new Store("implications", DB::$databaseDirectory, DB::$configuration);
             $this->debug = new Debug();
-        } catch (IOException | \SleekDB\Exceptions\InvalidArgumentException | InvalidConfigurationException $e) {
+        } catch (IOException | InvalidArgumentException | InvalidConfigurationException $e) {
             echo "sql init field\n";
         }
     }

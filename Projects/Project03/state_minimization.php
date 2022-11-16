@@ -8,6 +8,7 @@ use Config\Debug;
 use DB\Rules;
 use DB\Variables;
 use DB\Implications;
+use function DB\drop_all;
 
 class StateMinimization
 {
@@ -36,12 +37,6 @@ class StateMinimization
     public $output_count = 0;
 
     /**
-     * @var array $gauss_table
-     * Implication Table
-     */
-    public $implication_table = array();
-
-    /**
      * @var bool $init_done
      */
     public $init_done = false;
@@ -52,7 +47,7 @@ class StateMinimization
      */
     public function __construct()
     {
-        \DB\drop_all();
+        drop_all();
         $this->variables = new Variables();
         $this->rules = new Rules();
         $this->implications = new Implications();
@@ -66,6 +61,7 @@ class StateMinimization
         $this->fill_lower_triangle();
         $this->judge_implication_block();
         $this->replace();
+        $this->debug->info(json_encode($this->rules->db->findAll(array("id" => "asc")), JSON_PRETTY_PRINT));
     }
 
     // util
@@ -183,7 +179,7 @@ class StateMinimization
                         array_push($check_list[$second["input"]], $second["next_variable_id"]);
                     }
 
-                    foreach ($check_list as $level => $content)
+                    foreach ($check_list as $content)
                     {
                         if ($has_disabled)
                             continue;
@@ -211,13 +207,6 @@ class StateMinimization
                             }
                         }
                     }
-                    // debug
-//                    $this->debug->info(json_encode(array_map(function($el) {
-//                        return array_map(function($e) {
-//                            return $this->variables->find($e)["name"];
-//                        }, $el);
-//                    }, $check_list),JSON_PRETTY_PRINT));
-//                    die();
                 }
             }
         } while($block_change === true && $this->debug->warning("Warning: StateMinimization::judge_implication_block() loop again."));
@@ -225,11 +214,19 @@ class StateMinimization
     }
 
     /**
-     * replace
+     * replace all Compatibility
      */
     protected function replace()
     {
-        $this->debug->info(json_encode($this->implications->get_not_disabled(), JSON_PRETTY_PRINT));
-
+        $data = $this->implications->get_not_disabled();
+        if (count($data) >= 1) {
+            $data = $data[0];
+            $this->implications->override_variable_id($data["second_judge_var_id"], $data["first_judge_var_id"], true);
+            $this->rules->override_variable_id($data["second_judge_var_id"], $data["first_judge_var_id"]);
+            $this->rules->del_by_variable_id($data["second_judge_var_id"]);
+            $this->debug->info("replace all of " . $this->variables->find($data["second_judge_var_id"])["name"] . " to " . $this->variables->find($data["first_judge_var_id"])["name"] . ".");
+            $this->debug->warning("Warning: StateMinimization::replace() call by self.");
+            $this->replace();
+        }
     }
 }

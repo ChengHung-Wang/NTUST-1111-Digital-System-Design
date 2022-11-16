@@ -1,7 +1,7 @@
 {
-    "variable_id": 3,
-    "input": "signal_0",
+    "variable_id": 2,
+    "input": "signal_00",
     "output": "signal_0",
-    "next_variable_id": 6,
+    "next_variable_id": 1,
     "id": 5
 }

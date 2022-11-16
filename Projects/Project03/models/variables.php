@@ -18,7 +18,8 @@ class Variables extends Table {
 
     /**
      * get all variables
-     * @param int|null
+     * @param null $offset
+     * @param null $limit
      * @return array
      */
     public function get($offset = null, $limit = null) : array
@@ -74,20 +75,4 @@ class Variables extends Table {
     {
         return $this->find_by("name", $name);
     }
-//
-//    /**
-//     * @param string $col_name
-//     * @param string|int $content
-//     * @param bool $single
-//     * @return array
-//     */
-//    protected function find_by(string $col_name, $content, bool $single = true): array
-//    {
-//        try {
-//            $result = $this->db->createQueryBuilder()->where(array($col_name, "=", $content))->getQuery();
-//            return $single ? $result->first() : $result->fetch();
-//        } catch (IOException | InvalidArgumentException $e) {
-//            return array(DB::$configuration["primary_key"] => -1);
-//        }
-//    }
 }

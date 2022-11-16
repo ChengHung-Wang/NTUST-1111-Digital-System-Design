@@ -27,6 +27,7 @@ class Implications extends Table {
             ))["id"];
         } catch (IOException | InvalidArgumentExceptionAlias | JsonException | IdNotAllowedException $e)
         {
+            $this->debug->error("ERROR: \DB\Implications::insert(int, int);\n");
             return -1;
         }
     }
@@ -44,7 +45,7 @@ class Implications extends Table {
                 "disabled" => $set
             ));
         } catch (IOException | InvalidArgumentExceptionAlias | JsonException $e) {
-            die("ERROR: set disabled field(set id:$id to $set).\n");
+            $this->debug->error("ERROR: \DB\Implications::set_disabled(int, bool);\n");
         }
     }
 
@@ -83,7 +84,7 @@ class Implications extends Table {
                 ->getQuery()->fetch());
 
         } catch (IOException | InvalidArgumentExceptionAlias $e) {
-            die("ERROR: get all implications detail.\n");
+            $this->debug->error("ERROR: \DB\Implications::get();\n");
         }
     }
 
@@ -91,28 +92,32 @@ class Implications extends Table {
      * @param int $first_variable_id
      * @param int $second_variable_id
      * @return bool
-     * @throws IOException
-     * @throws InvalidArgumentExceptionAlias
      */
     public function is_disabled(int $first_variable_id, int $second_variable_id): bool
     {
         if ($first_variable_id === $second_variable_id) {
             return false;
         }
-        $result = $this->db->createQueryBuilder()
-            ->where(array(
-                array("first_judge_var_id", "=", $first_variable_id),
-                array("second_judge_var_id", "=", $second_variable_id),
-                array("disabled", "=", true)
-            ))
-            ->orWhere(array(
-                array("first_judge_var_id", "=", $second_variable_id),
-                array("second_judge_var_id", "=", $first_variable_id),
-                array("disabled", "=", true)
-            ))
-            ->getQuery()
-            ->fetch();
-        return count($result) > 0;
+        try {
+            $result = $this->db->createQueryBuilder()
+                ->where(array(
+                    array("first_judge_var_id", "=", $first_variable_id),
+                    array("second_judge_var_id", "=", $second_variable_id),
+                    array("disabled", "=", true)
+                ))
+                ->orWhere(array(
+                    array("first_judge_var_id", "=", $second_variable_id),
+                    array("second_judge_var_id", "=", $first_variable_id),
+                    array("disabled", "=", true)
+                ))
+                ->getQuery()
+                ->fetch();
+            return count($result) > 0;
+        } catch (IOException | InvalidArgumentExceptionAlias $e)
+        {
+            $this->debug->error("ERROR: \DB\Implications::is_disabled(int, int);\n");
+            return false;
+        }
     }
 
     /**
@@ -127,11 +132,37 @@ class Implications extends Table {
                 ->orderBy(array($this->db->getPrimaryKey() => "asc"))
                 ->getQuery()->fetch();
         } catch (IOException | InvalidArgumentExceptionAlias $e) {
+            $this->debug->error("ERROR: \DB\Implications::get_not_disabled();\n");
             return array();
         }
     }
 
     /**
-     *
+     * override variable id(before delete_rules_by_variable_id use)
+     * @param int $from_id
+     * @param int $override_id
+     * @param bool $set_disabled
+     * @return void
      */
+    public function override_variable_id(int $from_id, int $override_id, bool $set_disabled = false) : void
+    {
+        try {
+            $targets =
+                $this->db->createQueryBuilder()
+                    ->where(array("first_judge_var_id", "=", $from_id))
+                    ->orWhere(array("second_judge_var_id", "=", $from_id))
+                    ->getQuery()->fetch();
+            $this->db->update(array_map(function($el) use ($from_id, $override_id, $set_disabled) {
+                if ($el["first_judge_var_id"] === $from_id)
+                    $el["first_judge_var_id"] = $override_id;
+                if ($el["second_judge_var_id"] === $from_id)
+                    $el["second_judge_var_id"] = $override_id;
+                if ($set_disabled)
+                    $el["disabled"] = true;
+                return $el;
+            }, $targets));
+        } catch (IOException | InvalidArgumentExceptionAlias $e) {
+            $this->debug->error("ERROR: \DB\Implications::replace_variable_id(int, int, bool);");
+        }
+    }
 }

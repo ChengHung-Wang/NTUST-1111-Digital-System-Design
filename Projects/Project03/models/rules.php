@@ -1,7 +1,6 @@
 <?php
 namespace DB;
 use Config\DB;
-use Config\Debug;
 use SleekDB\Exceptions\IdNotAllowedException;
 use SleekDB\Exceptions\InvalidArgumentException;
 use SleekDB\Exceptions\IOException;
@@ -40,6 +39,7 @@ class Rules extends Table {
                 "next_variable_id" => $next_id
             ))[$col_key];
         } catch (IOException | IdNotAllowedException | InvalidArgumentException | JsonException $e) {
+            $this->debug->error("ERROR: \DB\Rules::insert(string, string, string, string);");
             return -1;
         }
     }
@@ -57,10 +57,37 @@ class Rules extends Table {
                 return $el["input"] === $signal;
             }))[0];
         } catch (IOException | InvalidArgumentException $e) {
-            $this->debug->error("ERROR: \DB\Rule()::find_by_variable_id(int, string)");
+            $this->debug->error("ERROR: \DB\Rules::find_by_variable_id(int, string);");
             return array();
         }
     }
 
+    public function override_variable_id($from_id, $override_id) {
+        try {
+            $targets =
+                $this->db->createQueryBuilder()
+                    ->where(array("next_variable_id", "=", $from_id))
+                    ->getQuery()->fetch();
+            $this->db->update(array_map(function($el) use ($override_id) {
+                $el["next_variable_id"] = $override_id;
+                return $el;
+            }, $targets));
+        } catch (IOException | InvalidArgumentException $e) {
+            $this->debug->error("ERROR: \DB\Rules::replace_variable_id(int, int);");
+        }
+    }
 
+    /**
+     * @param int $variable_id
+     * @return void
+     */
+    public function del_by_variable_id(int $variable_id) : void
+    {
+        try {
+            $this->db->deleteBy(array("variable_id", "=", $variable_id));
+        } catch (IOException | InvalidArgumentException $e)
+        {
+            $this->debug->error("ERROR: \DB\Rules::del_by_variable_id(int);");
+        }
+    }
 }

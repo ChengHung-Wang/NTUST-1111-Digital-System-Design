@@ -20,13 +20,6 @@ namespace Config {
             ),
             "folder_permissions" => 0777
         );
-
-        public static $searchOptions = array(
-            "minLength" => 2,
-            "mode" => "or",
-            "scoreKey" => "scoreKey",
-            "algorithm" => Query::SEARCH_ALGORITHM["hits"]
-        );
     }
 
     class Debug {
@@ -39,7 +32,8 @@ namespace Config {
             $this->cli = new Colors();
         }
 
-        public function error($mess, $end = "\n", $color = "black", $background = "red") {
+        public function error($mess, $end = "\n", $color = "black", $background = "red") : bool
+        {
             if ($this->status) {
                 echo $this->cli->getColoredString($mess, $color, $background);
                 echo $this->cli->getColoredString($end);
@@ -47,7 +41,8 @@ namespace Config {
             return true;
         }
 
-        public function success($mess, $end = "\n", $color = "white", $background = "green") {
+        public function success($mess, $end = "\n", $color = "white", $background = "green"): bool
+        {
             if ($this->status) {
                 echo $this->cli->getColoredString($mess, $color, $background);
                 echo $this->cli->getColoredString($end);
@@ -55,7 +50,8 @@ namespace Config {
             return true;
         }
 
-        public function info($mess, $end = "\n", $color = "white", $background = "dark_gray") {
+        public function info($mess, $end = "\n", $color = "white", $background = "dark_gray") : bool
+        {
             if ($this->status) {
                 echo $this->cli->getColoredString($mess, $color, $background);
                 echo $this->cli->getColoredString($end);
@@ -63,7 +59,8 @@ namespace Config {
             return true;
         }
 
-        public function warning($mess, $end = "\n", $color = "black", $background = "yellow") {
+        public function warning($mess, $end = "\n", $color = "black", $background = "yellow") : bool
+        {
             if ($this->status) {
                 echo $this->cli->getColoredString($mess, $color, $background);
                 echo $this->cli->getColoredString($end);
