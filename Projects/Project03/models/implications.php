@@ -1,7 +1,7 @@
 <?php
 namespace DB;
 use SleekDB\Exceptions\IdNotAllowedException;
-use SleekDB\Exceptions\InvalidArgumentException;
+use SleekDB\Exceptions\InvalidArgumentException as InvalidArgumentExceptionAlias;
 use SleekDB\Exceptions\IOException;
 use SleekDB\Exceptions\JsonException;
 
@@ -25,7 +25,7 @@ class Implications extends Table {
                 "second_judge_var_id" => $second_judge_var_id,
                 "disabled" => false
             ))["id"];
-        } catch (IOException | InvalidArgumentException | JsonException | IdNotAllowedException $e)
+        } catch (IOException | InvalidArgumentExceptionAlias | JsonException | IdNotAllowedException $e)
         {
             return -1;
         }
@@ -43,7 +43,7 @@ class Implications extends Table {
             $this->db->updateById($id, array(
                 "disabled" => $set
             ));
-        } catch (IOException | InvalidArgumentException | JsonException $e) {
+        } catch (IOException | InvalidArgumentExceptionAlias | JsonException $e) {
             die("ERROR: set disabled field(set id:$id to $set).\n");
         }
     }
@@ -82,7 +82,7 @@ class Implications extends Table {
                 ->orderBy(array("id" => "asc"))
                 ->getQuery()->fetch());
 
-        } catch (IOException | InvalidArgumentException $e) {
+        } catch (IOException | InvalidArgumentExceptionAlias $e) {
             die("ERROR: get all implications detail.\n");
         }
     }
@@ -92,7 +92,7 @@ class Implications extends Table {
      * @param int $second_variable_id
      * @return bool
      * @throws IOException
-     * @throws InvalidArgumentException
+     * @throws InvalidArgumentExceptionAlias
      */
     public function is_disabled(int $first_variable_id, int $second_variable_id): bool
     {
@@ -112,25 +112,26 @@ class Implications extends Table {
             ))
             ->getQuery()
             ->fetch();
-//        if ($first_variable_id == 2 && $second_variable_id == 4)
-//        {
-//            $this->debug->info(json_encode($this->db->createQueryBuilder()
-//                ->where(array(
-//                    array("first_judge_var_id", "=", $first_variable_id),
-//                    array("second_judge_var_id", "=", $second_variable_id),
-//                ))
-//                ->orWhere(array(
-//                    array("first_judge_var_id", "=", $second_variable_id),
-//                    array("second_judge_var_id", "=", $first_variable_id),
-//                ))
-//                ->getQuery()
-//                ->fetch(), JSON_PRETTY_PRINT));
-//        }
-//        $this->debug->info(json_encode(array(
-//            "data" => $result,
-//            "first" => $first_variable_id,
-//            "second" => $second_variable_id
-//        )));
         return count($result) > 0;
     }
+
+    /**
+     * get all hasn't disabled for implication blocks
+     * @return array
+     */
+    public function get_not_disabled() : array
+    {
+        try {
+            return $this->db->createQueryBuilder()
+                ->where(array("disabled", "=", false))
+                ->orderBy(array($this->db->getPrimaryKey() => "asc"))
+                ->getQuery()->fetch();
+        } catch (IOException | InvalidArgumentExceptionAlias $e) {
+            return array();
+        }
+    }
+
+    /**
+     *
+     */
 }

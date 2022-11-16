@@ -65,6 +65,7 @@ class StateMinimization
             return;
         $this->fill_lower_triangle();
         $this->judge_implication_block();
+        $this->replace();
     }
 
     // util
@@ -139,8 +140,7 @@ class StateMinimization
     }
 
     /**
-     * @throws \SleekDB\Exceptions\IOException
-     * @throws \SleekDB\Exceptions\InvalidArgumentException
+     * judge implication black
      */
     protected function judge_implication_block()
     {
@@ -210,7 +210,6 @@ class StateMinimization
                                 break;
                             }
                         }
-//                        $this->debug->info(json_encode($output, JSON_PRETTY_PRINT));
                     }
                     // debug
 //                    $this->debug->info(json_encode(array_map(function($el) {
@@ -223,5 +222,14 @@ class StateMinimization
             }
         } while($block_change === true && $this->debug->warning("Warning: StateMinimization::judge_implication_block() loop again."));
         $this->debug->success("Success: StateMinimization::judge_implication_block()");
+    }
+
+    /**
+     * replace
+     */
+    protected function replace()
+    {
+        $this->debug->info(json_encode($this->implications->get_not_disabled(), JSON_PRETTY_PRINT));
+
     }
 }
