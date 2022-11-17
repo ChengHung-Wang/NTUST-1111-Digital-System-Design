@@ -1,8 +1,12 @@
 <?php
+use Encoder\DotEncoder;
+use Encoder\KissEncoder;
 
-require_once "./database.php";
-require_once "./kiss_parser.php";
-require_once "./state_minimization.php";
+require_once __DIR__ . "/Database.php";
+require_once __DIR__ . "/KissParser.php";
+require_once __DIR__ . "/StateMinimization.php";
+require_once __DIR__ . "/KissEncoder.php";
+require_once __DIR__ . "/DotEncoder.php";
 
 $service = new StateMinimization();
 if (isset($argv[1]) && isset($argv[2]) && isset($argv[3])) {
@@ -21,9 +25,13 @@ if (isset($argv[1]) && isset($argv[2]) && isset($argv[3])) {
     $parser = new KissParser($service, $kiss_input);
     $parser->analyze();
     $service->render();
-    
-//    $service->render(true);
-//    fwrite($file, $service->encode_dot());
-//    fclose($file);
-//    echo $service->get_equation_str();
+
+    $kiss_encoder = new KissEncoder();
+    $dot_encoder = new DotEncoder();
+    $file_kiss_output = @fopen($kiss_output, "w+");
+    $file_dot_file = @fopen($dot_file, "w+");
+    fwrite($file_kiss_output, $service->output($kiss_encoder));
+    fwrite($file_dot_file, $service->output($dot_encoder));
+    fclose($file_kiss_output);
+    fclose($file_dot_file);
 }
