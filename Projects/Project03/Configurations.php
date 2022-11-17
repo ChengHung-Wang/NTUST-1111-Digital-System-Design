@@ -22,9 +22,14 @@ namespace Config {
         );
     }
 
+    class StateMinimization
+    {
+        public static $signal_prefix = "signal_";
+    }
+
     class Debug {
         // true = enable, false = disable
-        public $status = true;
+        public $status = false;
         private $cli;
 
         public function __construct()

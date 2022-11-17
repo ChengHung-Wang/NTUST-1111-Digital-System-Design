@@ -35,6 +35,7 @@ class Variables extends Table {
             return $this->db->findAll([$this->db->getPrimaryKey() => "asc"], $limit, $offset);
         } catch (IOException | InvalidArgumentException $e)
         {
+            $this->debug->error("ERROR: \DB\Variables::get();\n");
             return array();
         }
     }
@@ -52,6 +53,7 @@ class Variables extends Table {
                 "is_init" => $is_init
             ))[DB::$configuration["primary_key"]];
         } catch (IOException | IdNotAllowedException | InvalidArgumentException | JsonException $e) {
+            $this->debug->error("ERROR: \DB\Variables::insert();\n");
             return -1;
         }
     }
@@ -64,6 +66,33 @@ class Variables extends Table {
     public function find(int $id): array
     {
         return $this->find_by(DB::$configuration["primary_key"], $id);
+    }
+
+    /**
+     * delete variable
+     */
+    public function delete(int $id) : void
+    {
+        try {
+            $this->db->deleteById($id);
+        } catch (InvalidArgumentException $e)
+        {
+            $this->debug->error("ERROR: \DB\Variables::delete();\n");
+        }
+    }
+
+    /**
+     * get init variable name
+     */
+    public function get_init_name() : string
+    {
+        try {
+            $result = $this->db->findBy(array("is_init", "=", true));
+            return $result[0]["name"];
+        } catch (IOException | InvalidArgumentException $e) {
+            $this->debug->error("ERROR: \DB\Variables::get_init_name();\n");
+            return "undefined";
+        }
     }
 
     /**

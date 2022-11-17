@@ -65,7 +65,6 @@ class StateMinimization
         $this->fill_lower_triangle();
         $this->judge_implication_block();
         $this->replace();
-        $this->debug->info(json_encode($this->rules->db->findAll(array("id" => "asc")), JSON_PRETTY_PRINT));
     }
 
     // util
@@ -232,6 +231,7 @@ class StateMinimization
             $this->rules->del_by_variable_id($data["second_judge_var_id"]);
             $this->debug->info("replace all of " . $this->variables->find($data["second_judge_var_id"])["name"] . " to " . $this->variables->find($data["first_judge_var_id"])["name"] . ".");
             $this->debug->warning("Warning: StateMinimization::replace() call by self.");
+            $this->variables->delete($data["second_judge_var_id"]);
             $this->replace();
         }
     }
@@ -240,9 +240,12 @@ class StateMinimization
      * @param Encoder $service
      * @return string
      */
-    public function output(Encoder &$service) : string
+    public function output(Encoder $service) : string
     {
         $service->variables = $this->variables->get();
+        $service->init_variable = $this->variables->get_init_name();
+        $service->input_amount = $this->input_count;
+        $service->output_amount = $this->output_count;
         $service->rules = $this->rules->get();
         return $service->render();
     }

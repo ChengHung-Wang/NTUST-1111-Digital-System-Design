@@ -22,9 +22,20 @@ class Rules extends Table {
      */
     public function get() : array
     {
+        $variable_store = $this->variables;
         try {
-            return $this->db->findAll();
+            return $this->db->createQueryBuilder()
+                ->join(function($el) use ($variable_store) {
+                    return $variable_store->findById($el["variable_id"]);
+                }, "variable")
+                ->join(function($el) use ($variable_store) {
+                    return $variable_store->findById($el["next_variable_id"]);
+                }, "next_variable")
+                ->orderBy(array("id" => "asc"))
+                ->getQuery()
+                ->fetch();
         } catch (IOException | InvalidArgumentException $e) {
+            $this->debug->error("ERROR: \DB\Rules::get();");
             return array();
         }
     }

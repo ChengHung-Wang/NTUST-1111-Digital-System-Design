@@ -108,8 +108,8 @@ class KissParser {
                 $content = explode(" ", $content);
                 $var_name = trim($content[1]);
                 $next_var = trim($content[2]);
-                $input = "signal_" . trim($content[0]);
-                $output = "signal_" . trim($content[3]);
+                $input = \Config\StateMinimization::$signal_prefix . trim($content[0]);
+                $output = \Config\StateMinimization::$signal_prefix . trim($content[3]);
                 if (!in_array($var_name, $this->variables) && $this->variable_amount > 0) {
                     $this->variable_amount --;
                     $this->stateMinimization->add_variable($var_name, $var_name === $this->init_var);
