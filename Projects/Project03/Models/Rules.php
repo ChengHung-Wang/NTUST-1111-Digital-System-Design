@@ -86,7 +86,13 @@ class Rules extends Table {
         }
     }
 
-    public function override_variable_id($from_id, $override_id) {
+    /**
+     * @param $from_id
+     * @param $override_id
+     * @return void
+     */
+    public function override_variable_id($from_id, $override_id) : void
+    {
         try {
             $targets =
                 $this->db->createQueryBuilder()

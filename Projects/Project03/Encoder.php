@@ -39,6 +39,7 @@ class Encoder
     {
         return "";
     }
+
     /**
      * @param string $content
      * @param string $madeline
