@@ -1,8 +1,10 @@
-# NTUST-1111-Digital-System-Design
-### 台科大資工系數位系統設計
+<h1>
+    NTUST-1111-Digital-System-Design
+    <p style="font-size: 12px; color: #6c757d;margin-top: 15px;">台科大資工系數位系統設計</p>
+</h1>
 
 [會開在下學期的數位電子導論(DigitalElectronics)](https://github.com/ChengHung-Wang/NTUST-1102-DigitalElectronics)
----
+
 ### Projects:
 #### Project01: 
 [ROBDD Minimization(Written by C)](https://github.com/ChengHung-Wang/NTUST-1111-Digital-System-Design/tree/main/Projects/Project01)
