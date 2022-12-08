@@ -1,0 +1,21 @@
+|DSD_FPGA_Lab01
+clk => ~NO_FANOUT~
+rst => ~NO_FANOUT~
+sw[0] => ~NO_FANOUT~
+sw[1] => ~NO_FANOUT~
+sw[2] => ~NO_FANOUT~
+sw[3] => ~NO_FANOUT~
+sw[4] => ~NO_FANOUT~
+sw[5] => ~NO_FANOUT~
+sw[6] => ~NO_FANOUT~
+sw[7] => ~NO_FANOUT~
+seg[0] << <GND>
+seg[1] << <GND>
+seg[2] << <GND>
+seg[3] << <GND>
+seg[4] << <GND>
+seg[5] << <GND>
+seg[6] << <GND>
+seg[7] << <GND>
+
+
