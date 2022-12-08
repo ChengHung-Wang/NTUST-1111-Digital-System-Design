@@ -10,6 +10,6 @@ Project03: [State Minimization](https://github.com/ChengHung-Wang/NTUST-1111-Dig
 
 ----
 ProjectFPGA: 
-<div style="text-align: center;">
+<div align="center" style="text-align: center;">
     <img width="50%" src="./icon.png" />
 </div>
