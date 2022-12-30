@@ -21,14 +21,13 @@
 <p style="font-size: 12px; color: #6c757d;">不要抄襲，不要抄襲，不要抄襲。
 即使你認為你是「參考」。
 也不要跟別人一起寫，免得解決方案很像變成抄襲</p>
-<img src="./不要抄襲.png">
+<img src="./不要抄襲.png" />
 
 ----
 ### ProjectFPGA: 
 <p style="font-size: 12px; color: #6c757d;">不要抄襲，不要抄襲，不要抄襲。
 即使你認為你是「參考」。
 也不要跟別人一起寫，免得解決方案很像變成抄襲</p>
-<img src="./不要抄襲.png">
 <div align="center" style="text-align: center;">
     <a href="./Projects/ProjectFPGA">
         <img width="50%" style="border-radius: 50%;" src="./icon.png" />
