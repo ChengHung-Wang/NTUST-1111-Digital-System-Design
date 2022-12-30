@@ -3,6 +3,7 @@
     <p style="font-size: 12px; color: #6c757d;margin-top: 15px;">台科大資工系數位系統設計</p>
 </h1>
 
+
 [會開在下學期的數位電子導論(DigitalElectronics)](https://github.com/ChengHung-Wang/NTUST-1102-DigitalElectronics)
 
 ### Projects:
@@ -24,7 +25,17 @@
 
 ----
 ### ProjectFPGA: 
+<p style="font-size: 12px; color: #6c757d;">不要抄襲，不要抄襲，不要抄襲。
+即使你認為你是「參考」。
+也不要跟別人一起寫，免得解決方案很像變成抄襲</p>
+<img src="./不要抄襲.png">
 <div align="center" style="text-align: center;">
-    <img width="50%" style="border-radius: 50%;" src="./icon.png" />
-    <p style="font-size: 12px; color: #6c757d;">就是這個東西喔</p>
+    <a href="./Projects/ProjectFPGA">
+        <img width="50%" style="border-radius: 50%;" src="./icon.png" />
+        <p style="font-size: 12px; color: #6c757d;">就是這個東西喔</p>
+    </a>
 </div>
+
+<hr/>
+
+<h3 align="center">看到這裡還不給星星的話，我祝你段考都爆炸👍🏻</h3>
